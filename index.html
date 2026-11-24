@@ -1,0 +1,28 @@
+<!doctype html><meta charset=utf-8><title>Gray-Scott toy</title>
+<style>body{background:#14142a;color:#ddd;font:14px sans-serif;text-align:center;margin:8px}canvas{width:min(90vw,480px);image-rendering:pixelated;border:1px solid #444;cursor:crosshair}label{display:block;margin:4px}button{margin:3px}</style>
+<canvas id=c width=128 height=128></canvas>
+<label>feed F <input id=f type=range min=.01 max=.07 step=.0005 value=.0367> <span id=fv></span></label>
+<label>kill k <input id=k type=range min=.045 max=.07 step=.0005 value=.0649> <span id=kv></span></label>
+<button data-f=.0367 data-k=.0649>spots</button><button data-f=.029 data-k=.057>maze</button><button data-f=.022 data-k=.051>blur</button><button data-f=.055 data-k=.062>worms</button><button id=r>reset</button>
+<p>Click or drag on the picture to drop chemical V.</p>
+<script>
+const N=128,c=document.getElementById('c'),x=c.getContext('2d'),im=x.createImageData(N,N);
+let U,V,U2,V2;
+function reset(){U=new Float32Array(N*N).fill(1);V=new Float32Array(N*N);U2=U.slice();V2=V.slice();blob(64,64)}
+function blob(cx,cy){for(let j=-4;j<4;j++)for(let i=-4;i<4;i++){const p=((cy+j+N)%N)*N+(cx+i+N)%N;U[p]=.5;V[p]=.25}}
+function sh(){fv.textContent=(+f.value).toFixed(4);kv.textContent=(+k.value).toFixed(4)}
+f.oninput=k.oninput=sh;sh();
+document.querySelectorAll('button[data-f]').forEach(b=>b.onclick=()=>{f.value=b.dataset.f;k.value=b.dataset.k;sh()});
+r.onclick=reset;reset();
+let down=0;function pt(e){const b=c.getBoundingClientRect();blob(Math.floor((e.clientX-b.left)/b.width*N),Math.floor((e.clientY-b.top)/b.height*N))}
+c.onpointerdown=e=>{down=1;pt(e)};onpointerup=()=>down=0;c.onpointermove=e=>down&&pt(e);
+function step(){const ff=+f.value,kk=+k.value;
+for(let j=0;j<N;j++){const jm=((j+N-1)%N)*N,jp=((j+1)%N)*N,jj=j*N;
+for(let i=0;i<N;i++){const im_=(i+N-1)%N,ip=(i+1)%N,p=jj+i;
+const u=U[p],v=V[p],uvv=u*v*v;
+U2[p]=u+.16*(U[jm+i]+U[jp+i]+U[jj+im_]+U[jj+ip]-4*u)-uvv+ff*(1-u);
+V2[p]=v+.08*(V[jm+i]+V[jp+i]+V[jj+im_]+V[jj+ip]-4*v)+uvv-(ff+kk)*v}}
+[U,U2]=[U2,U];[V,V2]=[V2,V]}
+function draw(){for(let p=0;p<N*N;p++){const g=Math.min(1,V[p]/.4);im.data[p*4]=20+g*230;im.data[p*4+1]=15+g*120;im.data[p*4+2]=40+g*80;im.data[p*4+3]=255}x.putImageData(im,0,0)}
+(function loop(){for(let s=0;s<12;s++)step();draw();requestAnimationFrame(loop)})();
+</script>
